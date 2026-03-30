@@ -48,6 +48,36 @@ const todayStr = () => {
 };
 const getCat = (id) => ALL_CATS.find(c => c.id === id) || { emoji: "💸", label: "Lainnya" };
 
+const Wordmark = ({ size = 24, gradientId = "dompetWordmarkGrad" }) => (
+  <svg
+    width={Math.round(size * 3.2)}
+    height={size}
+    viewBox="0 0 320 100"
+    role="img"
+    aria-label="dompet."
+    style={{ display: "block" }}
+  >
+    <defs>
+      <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stopColor="#6366f1" />
+        <stop offset="0.55" stopColor="#a78bfa" />
+        <stop offset="1" stopColor="#22d3ee" />
+      </linearGradient>
+    </defs>
+    <text
+      x="0"
+      y="76"
+      fontFamily="system-ui, -apple-system, Segoe UI, Roboto, Arial"
+      fontWeight="800"
+      fontSize="78"
+      fill={`url(#${gradientId})`}
+      letterSpacing="-2"
+    >
+      dompet.
+    </text>
+  </svg>
+);
+
 const useRecharts = (enabled) => {
   const [mod, setMod] = useState(null);
 
@@ -493,7 +523,7 @@ Return ONLY this JSON (no markdown, no explanation):
     card: { background:"#111118", border:"1px solid #1c1c2e", borderRadius:16, padding:16, marginBottom:10 },
     input: { width:"100%", padding:"11px 14px", background:"#14141f", border:"1px solid #2a2a3e", borderRadius:12, color:"#e8e8f0", fontSize:14 },
     btn: { padding:13, borderRadius:12, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"white", fontWeight:700, fontSize:15, width:"100%", border:"none", cursor:"pointer" },
-    lbl: { fontSize:11, color:"#555", marginBottom:5, display:"block" },
+    lbl: { fontSize:11, color:"#9ca3af", marginBottom:5, display:"block" },
   };
 
   const CSS = `
@@ -514,8 +544,8 @@ Return ONLY this JSON (no markdown, no explanation):
   if (screen==="splash") return (
     <div style={{minHeight:"100vh",background:"#08080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans','Segoe UI',sans-serif"}}>
       <style>{CSS}</style>
-      <div style={{fontSize:44,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>dompet.</div>
-      <div style={{color:"#333",fontSize:13,marginTop:8,fontFamily:"'DM Sans',sans-serif"}}>personal finance tracker</div>
+      <div style={{transform:"translateY(-2px)"}}><Wordmark size={44} gradientId="wmSplash" /></div>
+      <div style={{color:"#9ca3af",fontSize:13,marginTop:8,fontFamily:"'DM Sans',sans-serif"}}>personal finance tracker</div>
     </div>
   );
 
@@ -524,9 +554,9 @@ Return ONLY this JSON (no markdown, no explanation):
     <div style={{minHeight:"100vh",background:"#08080f",color:"#e8e8f0",fontFamily:"'DM Sans','Segoe UI',sans-serif",maxWidth:480,margin:"0 auto",padding:24}}>
       <style>{CSS}</style>
       <div style={{marginTop:50}}>
-        <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",fontSize:34,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6}}>dompet.</div>
+        <div style={{marginBottom:8}}><Wordmark size={34} gradientId="wmOnboarding" /></div>
         <div style={{fontSize:19,fontWeight:700,marginBottom:6}}>Setup AI Parsing 🤖</div>
-        <div style={{fontSize:13,color:"#666",lineHeight:1.7,marginBottom:24}}>
+        <div style={{fontSize:13,color:"#a1a1aa",lineHeight:1.7,marginBottom:24}}>
           Pakai <strong style={{color:"#4ade80"}}>Gemini API</strong> dari Google —{" "}
           ada <strong style={{color:"#4ade80"}}>free tier</strong> (limit mengikuti akun/quota Google).
         </div>
@@ -536,7 +566,7 @@ Return ONLY this JSON (no markdown, no explanation):
           {["Buka aistudio.google.com","Login akun Google","Klik 'Get API Key'","Copy & paste di bawah"].map((s,i)=>(
             <div key={i} style={{display:"flex",gap:10,marginBottom:8,alignItems:"center"}}>
               <div style={{width:20,height:20,borderRadius:"50%",background:"linear-gradient(135deg,#6366f1,#8b5cf6)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0,color:"white"}}>{i+1}</div>
-              <div style={{fontSize:13,color:"#aaa"}}>{s}</div>
+              <div style={{fontSize:13,color:"#cbd5e1"}}>{s}</div>
             </div>
           ))}
         </div>
@@ -549,10 +579,10 @@ Return ONLY this JSON (no markdown, no explanation):
         <label style={S.lbl}>Gemini API Key</label>
         <input value={keyInput} onChange={e=>setKeyInput(e.target.value)} placeholder="AIza..." style={{...S.input,fontFamily:"monospace",fontSize:12,marginBottom:12}} />
         <button onClick={saveKey} style={{...S.btn,marginBottom:10}}>Simpan & Mulai →</button>
-        <button onClick={()=>setScreen("app")} style={{width:"100%",padding:13,borderRadius:12,background:"transparent",border:"1px solid #1c1c2e",color:"#555",fontSize:13,cursor:"pointer"}}>
+        <button onClick={()=>setScreen("app")} style={{width:"100%",padding:13,borderRadius:12,background:"transparent",border:"1px solid #1c1c2e",color:"#9ca3af",fontSize:13,cursor:"pointer"}}>
           Lewati, pakai parsing lokal
         </button>
-        <div style={{fontSize:11,color:"#2a2a3e",textAlign:"center",marginTop:12}}>API key/model hanya tersimpan di browser lo.</div>
+        <div style={{fontSize:11,color:"#52525b",textAlign:"center",marginTop:12}}>API key/model hanya tersimpan di browser lo.</div>
       </div>
     </div>
   );
@@ -565,9 +595,9 @@ Return ONLY this JSON (no markdown, no explanation):
       {/* Header */}
       <div style={{padding:"16px 16px 12px",position:"sticky",top:0,background:"#08080f",zIndex:10,borderBottom:"1px solid #141420"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",fontSize:22,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>dompet.</div>
+          <div style={{transform:"translateY(-1px)"}}><Wordmark size={22} gradientId="wmHeader" /></div>
           <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,color:"#444"}}>saldo {MONTHS[selectedMonth]}</div>
+            <div style={{fontSize:10,color:"#a1a1aa"}}>saldo {MONTHS[selectedMonth]}</div>
             <div style={{fontSize:17,fontWeight:700,color:balance>=0?"#4ade80":"#f87171"}}>{formatShort(balance)}</div>
           </div>
         </div>
@@ -600,7 +630,7 @@ Return ONLY this JSON (no markdown, no explanation):
               ].map((item,i)=>(
                 <div key={i} style={{...S.card,marginBottom:0,padding:14,position:"relative",overflow:"hidden"}}>
                   <div style={{position:"absolute",top:0,left:0,right:0,height:2,background:item.color}} />
-                  <div style={{fontSize:10,color:"#444",marginBottom:3}}>{item.label}</div>
+                  <div style={{fontSize:10,color:"#a1a1aa",marginBottom:3}}>{item.label}</div>
                   <div style={{fontSize:16,fontWeight:700,color:item.color}}>{formatShort(item.value)}</div>
                 </div>
               ))}
@@ -610,8 +640,8 @@ Return ONLY this JSON (no markdown, no explanation):
             <div style={{...S.card,background:"linear-gradient(135deg,#111118,#16102a)"}}>
               <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
                 <div>
-                  <div style={{fontSize:11,color:"#555"}}>Financial Health Score</div>
-                  <div style={{fontSize:10,color:"#333"}}>% income ditabung + investasi</div>
+                  <div style={{fontSize:11,color:"#9ca3af"}}>Financial Health Score</div>
+                  <div style={{fontSize:10,color:"#a1a1aa"}}>% income ditabung + investasi</div>
                 </div>
                 <div style={{fontSize:28,fontWeight:800,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:healthScore>=healthTarget?"#4ade80":healthScore>=midTarget?"#fbbf24":"#f87171"}}>{healthScore}%</div>
               </div>
@@ -619,14 +649,14 @@ Return ONLY this JSON (no markdown, no explanation):
                 <div style={{height:"100%",width:`${Math.min(healthScore,100)}%`,background:healthScore>=healthTarget?"linear-gradient(90deg,#22d3ee,#4ade80)":healthScore>=midTarget?"linear-gradient(90deg,#fbbf24,#f97316)":"#f87171",borderRadius:3,transition:"width 0.6s ease"}} />
               </div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:5,fontSize:10}}>
-                <span style={{color:"#333"}}>Target: {healthTarget}%+</span>
+                <span style={{color:"#a1a1aa"}}>Target: {healthTarget}%+</span>
                 <span style={{color:healthScore>=healthTarget?"#4ade80":healthScore>=midTarget?"#fbbf24":"#f87171"}}>
                   {healthScore>=healthTarget?"🔥 On Track!":healthScore>=midTarget?"⚡ Lumayan":"⚠️ Perlu Ditingkatkan"}
                 </span>
               </div>
-              <div style={{marginTop:8,fontSize:10,color:"#333",display:"flex",justifyContent:"space-between",gap:10}}>
+              <div style={{marginTop:8,fontSize:10,color:"#a1a1aa",display:"flex",justifyContent:"space-between",gap:10}}>
                 <span>Konsistensi 3 bulan: <span style={{color:consistency3>=2?"#4ade80":consistency3===1?"#fbbf24":"#f87171",fontWeight:700}}>{consistency3}/3</span></span>
-                <span style={{color:"#2a2a3e"}}>{last3.map(x=>MONTHS[x.m]).reverse().join(" · ")}</span>
+                <span style={{color:"#52525b"}}>{last3.map(x=>MONTHS[x.m]).reverse().join(" · ")}</span>
               </div>
             </div>
 
@@ -634,7 +664,7 @@ Return ONLY this JSON (no markdown, no explanation):
             {totalY>0 && (
               <div style={{...S.card,background:"#0e0e1a",borderColor:"#6366f122"}}>
                 <div style={{fontSize:11,color:"#6366f1",marginBottom:5,fontWeight:600}}>💡 Insight</div>
-                <div style={{fontSize:12,color:"#777",lineHeight:1.6}}>
+                <div style={{fontSize:12,color:"#cbd5e1",lineHeight:1.6}}>
                   {totalC>totalY*0.7?`Konsumsi lo ${Math.round((totalC/totalY)*100)}% dari income. Coba kurangi pengeluaran non-esensial.`
                   :healthScore>=20?`Keren! Lo udah nabung ${healthScore}% dari income bulan ini. Keep it up! 💪`
                   :`Lo masih punya sisa ${formatShort(balance)}. Pertimbangkan untuk ditabung atau diinvestasikan.`}
@@ -647,7 +677,7 @@ Return ONLY this JSON (no markdown, no explanation):
               <div style={{...S.card,textAlign:"center",padding:32}}>
                 <div style={{fontSize:36,marginBottom:10}}>💸</div>
                 <div style={{fontSize:14,fontWeight:600,marginBottom:6}}>Belum ada transaksi</div>
-                <div style={{fontSize:12,color:"#555",marginBottom:16}}>Mulai catat pemasukan & pengeluaran lo</div>
+                <div style={{fontSize:12,color:"#a1a1aa",marginBottom:16}}>Mulai catat pemasukan & pengeluaran lo</div>
                 <button onClick={()=>setActiveTab("chat")} style={{...S.btn,width:"auto",padding:"10px 24px",fontSize:13}}>Catat Sekarang</button>
               </div>
             )}
@@ -655,7 +685,7 @@ Return ONLY this JSON (no markdown, no explanation):
             {/* Pie */}
             {pieData.length>0 && (
               <div style={S.card}>
-                <div style={{fontSize:11,color:"#555",marginBottom:10}}>Alokasi {MONTHS[selectedMonth]}</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Alokasi {MONTHS[selectedMonth]}</div>
                 <div style={{display:"flex",alignItems:"center",gap:12}}>
                   {recharts ? (() => {
                     const { PieChart, Pie, Cell, ResponsiveContainer } = recharts;
@@ -676,7 +706,7 @@ Return ONLY this JSON (no markdown, no explanation):
                       <div key={i} style={{display:"flex",justifyContent:"space-between",marginBottom:7}}>
                         <div style={{display:"flex",alignItems:"center",gap:6}}>
                           <div style={{width:7,height:7,borderRadius:"50%",background:d.color}}/>
-                          <span style={{fontSize:11,color:"#777"}}>{d.name}</span>
+                          <span style={{fontSize:11,color:"#cbd5e1"}}>{d.name}</span>
                         </div>
                         <span style={{fontSize:11,fontWeight:600,color:d.color}}>{formatShort(d.value)}</span>
                       </div>
@@ -689,7 +719,7 @@ Return ONLY this JSON (no markdown, no explanation):
             {/* Bar chart */}
             {transactions.length>0 && (
               <div style={S.card}>
-                <div style={{fontSize:11,color:"#555",marginBottom:10}}>Cashflow {yr}</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Cashflow {yr}</div>
                 {recharts ? (() => {
                   const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } = recharts;
                   return (
@@ -710,7 +740,7 @@ Return ONLY this JSON (no markdown, no explanation):
                   {[["#4ade80","Income"],["#f97316","Expense"]].map(([c,l])=>(
                     <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
                       <div style={{width:7,height:7,borderRadius:2,background:c}}/>
-                      <span style={{fontSize:10,color:"#444"}}>{l}</span>
+                      <span style={{fontSize:10,color:"#a1a1aa"}}>{l}</span>
                     </div>
                   ))}
                 </div>
@@ -720,7 +750,7 @@ Return ONLY this JSON (no markdown, no explanation):
             {/* Top expense */}
             {catBreakdown.length>0 && (
               <div style={S.card}>
-                <div style={{fontSize:11,color:"#555",marginBottom:10}}>Top Pengeluaran</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Top Pengeluaran</div>
                 {catBreakdown.slice(0,5).map((cat,i)=>(
                   <div key={i} style={{marginBottom:10}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
@@ -737,19 +767,19 @@ Return ONLY this JSON (no markdown, no explanation):
 
             {transactions.length>0 && (
               <div style={S.card}>
-                <div style={{fontSize:11,color:"#555",marginBottom:10}}>📤 Export & Laporan</div>
+                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>📤 Export & Laporan</div>
                 <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                  <button onClick={exportCSVMonth} style={{padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#666",fontSize:12,cursor:"pointer"}}>
+                  <button onClick={exportCSVMonth} style={{padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:12,cursor:"pointer"}}>
                     📥 CSV {MONTHS[selectedMonth]}
                   </button>
-                  <button onClick={exportCSVAll} style={{padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#666",fontSize:12,cursor:"pointer"}}>
+                  <button onClick={exportCSVAll} style={{padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:12,cursor:"pointer"}}>
                     📥 CSV Semua
                   </button>
                 </div>
                 <button onClick={printMonthlyReport} style={{width:"100%",padding:12,borderRadius:12,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"white",fontSize:13,fontWeight:700,marginTop:8,cursor:"pointer"}}>
                   🖨️ Cetak / Save PDF ({MONTHS[selectedMonth]})
                 </button>
-                <div style={{fontSize:10,color:"#333",marginTop:8,lineHeight:1.5}}>
+                <div style={{fontSize:10,color:"#a1a1aa",marginTop:8,lineHeight:1.5}}>
                   PDF = pakai fitur Print browser (Save as PDF). CSV = buat backup/olah data.
                 </div>
               </div>
@@ -780,7 +810,7 @@ Return ONLY this JSON (no markdown, no explanation):
                     {msg.isPending && (
                       <div style={{display:"flex",gap:8,marginTop:10}}>
                         <button onClick={()=>confirmTx(true,msg.pendingData)} style={{flex:1,padding:"9px",borderRadius:10,background:"linear-gradient(135deg,#22d3ee,#4ade80)",color:"#08080f",fontWeight:700,fontSize:13}}>✓ Bener!</button>
-                        <button onClick={()=>confirmTx(false,msg.pendingData)} style={{padding:"9px 14px",borderRadius:10,background:"#1a1a2e",color:"#666",fontSize:13,border:"1px solid #2a2a3e"}}>✗ Batal</button>
+                        <button onClick={()=>confirmTx(false,msg.pendingData)} style={{padding:"9px 14px",borderRadius:10,background:"#1a1a2e",color:"#cbd5e1",fontSize:13,border:"1px solid #2a2a3e"}}>✗ Batal</button>
                       </div>
                     )}
                   </div>
@@ -844,7 +874,7 @@ Return ONLY this JSON (no markdown, no explanation):
 
               <button onClick={saveForm} style={S.btn}>{editId?"Update":"Simpan"}</button>
               {editId && (
-                <button onClick={()=>{setEditId(null);setForm({type:"expense",categoryId:"food",amount:"",note:"",date:todayStr()});}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #1c1c2e",color:"#555",fontSize:13,marginTop:8,cursor:"pointer"}}>Batal Edit</button>
+                <button onClick={()=>{setEditId(null);setForm({type:"expense",categoryId:"food",amount:"",note:"",date:todayStr()});}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #1c1c2e",color:"#9ca3af",fontSize:13,marginTop:8,cursor:"pointer"}}>Batal Edit</button>
               )}
             </div>
           </div>
@@ -863,7 +893,7 @@ Return ONLY this JSON (no markdown, no explanation):
               </select>
             </div>
             {filteredTxs.length===0?(
-              <div style={{textAlign:"center",padding:40,color:"#444",fontSize:13}}>Belum ada transaksi</div>
+              <div style={{textAlign:"center",padding:40,color:"#a1a1aa",fontSize:13}}>Belum ada transaksi</div>
             ):filteredTxs.map(tx=>{
               const cat=getCat(tx.categoryId);
               return (
@@ -872,15 +902,15 @@ Return ONLY this JSON (no markdown, no explanation):
                     <div style={{width:36,height:36,borderRadius:10,background:"#14141f",display:"flex",alignItems:"center",justifyContent:"center",fontSize:17}}>{cat.emoji}</div>
                     <div>
                       <div style={{fontSize:12,fontWeight:500}}>{tx.note||cat.label}</div>
-                      <div style={{fontSize:10,color:"#444",marginTop:2}}>{cat.label} · {tx.date}</div>
+                      <div style={{fontSize:10,color:"#a1a1aa",marginTop:2}}>{cat.label} · {tx.date}</div>
                     </div>
                   </div>
                   <div style={{display:"flex",alignItems:"center",gap:6}}>
                     <div style={{fontSize:13,fontWeight:700,color:tx.type==="income"?"#4ade80":tx.type==="saving"?"#22d3ee":"#f97316"}}>
                       {tx.type==="income"?"+":"-"}{formatShort(tx.amount)}
                     </div>
-                    <button onClick={()=>startEdit(tx)} style={{background:"transparent",color:"#444",fontSize:13,padding:4}}>✏️</button>
-                    <button onClick={()=>setTransactions(p=>p.filter(t=>t.id!==tx.id))} style={{background:"transparent",color:"#333",fontSize:13,padding:4}}>✕</button>
+                    <button onClick={()=>startEdit(tx)} style={{background:"transparent",color:"#a1a1aa",fontSize:13,padding:4}}>✏️</button>
+                    <button onClick={()=>setTransactions(p=>p.filter(t=>t.id!==tx.id))} style={{background:"transparent",color:"#a1a1aa",fontSize:13,padding:4}}>✕</button>
                   </div>
                 </div>
               );
@@ -896,21 +926,21 @@ Return ONLY this JSON (no markdown, no explanation):
               <div style={{fontSize:12,color:geminiKey?"#4ade80":"#f97316",marginBottom:10}}>
                 {geminiKey?"✅ AI parsing aktif (Gemini)":"⚠️ Belum ada key — pakai parsing lokal"}
               </div>
-              <div style={{fontSize:11,color:"#555",marginBottom:6}}>Model</div>
+              <div style={{fontSize:11,color:"#9ca3af",marginBottom:6}}>Model</div>
               <select value={geminiModel} onChange={e=>saveModel(e.target.value)} style={{...S.input,marginBottom:10}}>
                 {["gemini-2.5-flash","gemini-2.0-flash"].map(m => <option key={m} value={m}>{m}</option>)}
               </select>
               <input value={keyInput} onChange={e=>setKeyInput(e.target.value)} placeholder="AIza..." style={{...S.input,fontFamily:"monospace",fontSize:12,marginBottom:10}}/>
               <button onClick={saveKey} style={{...S.btn,marginBottom:8}}>Simpan API Key</button>
               {geminiKey&&<button onClick={()=>{localStorage.removeItem("dompet_gemini_key");setGeminiKey("");}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #2a1a1a",color:"#f87171",fontSize:13,cursor:"pointer"}}>Hapus API Key</button>}
-              <div style={{fontSize:10,color:"#333",marginTop:10,lineHeight:1.6}}>
+              <div style={{fontSize:10,color:"#a1a1aa",marginTop:10,lineHeight:1.6}}>
                 Kalau Gemini gagal: cek API key benar, quota free tier, dan pastikan key tidak dibatasi (HTTP referrer restrictions).
               </div>
             </div>
 
             <div style={S.card}>
               <div style={{fontSize:13,fontWeight:600,marginBottom:10}}>🎯 Target Health Score</div>
-              <div style={{fontSize:12,color:"#555",marginBottom:10}}>Target % pemasukan yang masuk tabungan + investasi.</div>
+              <div style={{fontSize:12,color:"#9ca3af",marginBottom:10}}>Target % pemasukan yang masuk tabungan + investasi.</div>
               <div style={{display:"flex",gap:8,marginBottom:10}}>
                 {[10,15,20,30].map(v => (
                   <button key={v} onClick={()=>saveHealthTarget(v)} style={{
@@ -927,15 +957,15 @@ Return ONLY this JSON (no markdown, no explanation):
 
             <div style={S.card}>
               <div style={{fontSize:13,fontWeight:600,marginBottom:10}}>💾 Data</div>
-              <div style={{fontSize:12,color:"#555",marginBottom:12}}>{transactions.length} transaksi tersimpan di browser ini.</div>
-              <button onClick={exportCSVMonth} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#666",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Bulan Dipilih)</button>
-              <button onClick={exportCSVAll} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#666",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Semua)</button>
+              <div style={{fontSize:12,color:"#9ca3af",marginBottom:12}}>{transactions.length} transaksi tersimpan di browser ini.</div>
+              <button onClick={exportCSVMonth} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Bulan Dipilih)</button>
+              <button onClick={exportCSVAll} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Semua)</button>
               <button onClick={printMonthlyReport} style={{width:"100%",padding:12,borderRadius:12,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"white",fontSize:13,fontWeight:700,marginBottom:8,cursor:"pointer"}}>🖨️ Cetak / Save PDF (Bulan Dipilih)</button>
               <button onClick={()=>{if(window.confirm("Hapus semua data transaksi?")){setTransactions([]);localStorage.removeItem("dompet_transactions");}}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #2a1a1a",color:"#f87171",fontSize:13,cursor:"pointer"}}>🗑️ Reset Semua Data</button>
             </div>
 
-            <div style={{...S.card,fontSize:12,color:"#333",lineHeight:1.9}}>
-              <div style={{fontWeight:600,color:"#444",marginBottom:4}}>dompet. v2</div>
+            <div style={{...S.card,fontSize:12,color:"#a1a1aa",lineHeight:1.9}}>
+              <div style={{fontWeight:600,color:"#a1a1aa",marginBottom:4}}>dompet. v2</div>
               Framework: Y = C + I + S<br/>
               Data: localStorage (per browser)<br/>
               AI: {geminiKey ? `Gemini (${geminiModel})` : "Parsing lokal"}

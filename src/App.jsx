@@ -147,6 +147,7 @@ export default function App() {
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [chatMsgs, setChatMsgs] = useState([{ role:"assistant", text:"Hei! Catat transaksi lo dengan natural.\n\nContoh:\n• \"makan siang 45rb\"\n• \"gajian 8jt\"\n• \"side job foto 1.8jt\"\n• \"cicilan HP 1.2jt\" 💸" }]);
   const [chatInput, setChatInput] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -197,7 +198,7 @@ export default function App() {
   };
 
   // Stats
-  const yr = new Date().getFullYear();
+  const yr = selectedYear;
   const monthTxs = transactions.filter(t => { const d = new Date(t.date); return d.getMonth()===selectedMonth && d.getFullYear()===yr; });
   const totalY = monthTxs.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
   const totalC = monthTxs.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
@@ -576,7 +577,7 @@ Return ONLY this JSON (no markdown, no explanation):
     {name:"Konsumsi",value:totalC,color:"#f97316"},
     {name:"Tabungan",value:totalS,color:"#22d3ee"},
     {name:"Investasi",value:totalI,color:"#a78bfa"},
-    {name:"Sisa",value:Math.max(balance,0),color:"#4ade80"},
+    {name:"Saldo",value:Math.max(balance,0),color:"#94a3b8"},
   ].filter(d=>d.value>0);
 
   const barData = MONTHS.map((m,i) => {
@@ -667,26 +668,36 @@ Return ONLY this JSON (no markdown, no explanation):
       {/* Header */}
       <div style={{padding:"16px 16px 12px",position:"sticky",top:0,background:"#08080f",zIndex:10,borderBottom:"1px solid #141420"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{transform:"translateY(-1px)"}}><Wordmark size={22} gradientId="wmHeader" /></div>
-          <div style={{textAlign:"right"}}>
-            <div style={{fontSize:10,color:"#a1a1aa"}}>saldo {MONTHS[selectedMonth]}</div>
-            <div style={{fontSize:17,fontWeight:700,color:balance>=0?"#4ade80":"#f87171"}}>{formatShort(balance)}</div>
+            <div style={{transform:"translateY(-1px)"}}><Wordmark size={22} gradientId="wmHeader" /></div>
+            <div style={{textAlign:"right"}}>
+              <div style={{fontSize:10,color:"#a1a1aa"}}>saldo {MONTHS[selectedMonth]} {yr}</div>
+              <div style={{fontSize:17,fontWeight:700,color:balance>=0?"#4ade80":"#f87171"}}>{formatShort(balance)}</div>
+            </div>
           </div>
         </div>
-      </div>
 
       <div style={{padding:"12px 14px 0"}}>
 
         {/* DASHBOARD */}
         {activeTab==="dashboard" && (
           <div className="fade">
+            {/* Year controls */}
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+              <div style={{fontSize:11,color:"#52525b"}}>Periode</div>
+              <div style={{display:"flex",alignItems:"center",gap:8}}>
+                <button onClick={()=>setSelectedYear(y=>y-1)} style={{padding:"6px 10px",borderRadius:10,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:12}}>‹</button>
+                <div style={{fontSize:12,fontWeight:700,color:"#e8e8f0",minWidth:46,textAlign:"center"}}>{yr}</div>
+                <button onClick={()=>setSelectedYear(y=>y+1)} style={{padding:"6px 10px",borderRadius:10,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:12}}>›</button>
+                <button onClick={()=>{const d=new Date();setSelectedYear(d.getFullYear());setSelectedMonth(d.getMonth());}} style={{padding:"6px 10px",borderRadius:10,background:"transparent",border:"1px solid #2a2a3e",color:"#9ca3af",fontSize:12}}>Now</button>
+              </div>
+            </div>
             {/* Month picker */}
             <div style={{display:"flex",gap:5,overflowX:"auto",paddingBottom:10,marginBottom:8}}>
               {MONTHS.map((m,i)=>(
                 <button key={i} onClick={()=>setSelectedMonth(i)} style={{
                   padding:"5px 12px",borderRadius:50,fontSize:11,fontWeight:500,whiteSpace:"nowrap",flexShrink:0,
                   background:selectedMonth===i?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#111118",
-                  color:selectedMonth===i?"white":"#555",
+                  color:selectedMonth===i?"white":"#9ca3af",
                   border:"1px solid "+(selectedMonth===i?"transparent":"#1c1c2e"),
                 }}>{m}</button>
               ))}
@@ -738,7 +749,7 @@ Return ONLY this JSON (no markdown, no explanation):
                 <div style={{fontSize:11,color:"#6366f1",marginBottom:5,fontWeight:600}}>💡 Insight</div>
                 <div style={{fontSize:12,color:"#cbd5e1",lineHeight:1.6}}>
                   {totalC>totalY*0.7?`Konsumsi lo ${Math.round((totalC/totalY)*100)}% dari income. Coba kurangi pengeluaran non-esensial.`
-                  :healthScore>=20?`Keren! Lo udah nabung ${healthScore}% dari income bulan ini. Keep it up! 💪`
+                  :healthScore>=healthTarget?`Keren! Lo udah nabung ${healthScore}% dari income bulan ini. Keep it up! 💪`
                   :`Lo masih punya sisa ${formatShort(balance)}. Pertimbangkan untuk ditabung atau diinvestasikan.`}
                 </div>
               </div>

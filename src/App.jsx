@@ -113,6 +113,7 @@ export default function App() {
   const [geminiKey, setGeminiKey] = useState("");
   const [keyInput, setKeyInput] = useState("");
   const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash");
+  const [healthTarget, setHealthTarget] = useState(20);
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -128,9 +129,14 @@ export default function App() {
   useEffect(() => {
     const key = localStorage.getItem("dompet_gemini_key");
     const model = localStorage.getItem("dompet_gemini_model");
+    const target = localStorage.getItem("dompet_health_target");
     const txs = localStorage.getItem("dompet_transactions");
     if (key) setGeminiKey(key);
     if (model) setGeminiModel(model);
+    if (target) {
+      const n = parseInt(target, 10);
+      if (!Number.isNaN(n) && n > 0) setHealthTarget(Math.min(Math.max(n, 5), 90));
+    }
     if (txs) { try { setTransactions(JSON.parse(txs)); } catch(e){} }
     setTimeout(() => setScreen(key ? "app" : "onboarding"), 1200);
   }, []);
@@ -154,6 +160,12 @@ export default function App() {
     setGeminiModel(m);
   };
 
+  const saveHealthTarget = (n) => {
+    const v = Math.min(Math.max(parseInt(n, 10) || 0, 5), 90);
+    localStorage.setItem("dompet_health_target", String(v));
+    setHealthTarget(v);
+  };
+
   // Stats
   const yr = new Date().getFullYear();
   const monthTxs = transactions.filter(t => { const d = new Date(t.date); return d.getMonth()===selectedMonth && d.getFullYear()===yr; });
@@ -163,6 +175,26 @@ export default function App() {
   const totalI = monthTxs.filter(t=>t.categoryId==="investment").reduce((s,t)=>s+t.amount,0);
   const balance = totalY - totalC - totalS - totalI;
   const healthScore = totalY > 0 ? Math.round(((totalS+totalI)/totalY)*100) : 0;
+  const midTarget = Math.max(10, Math.round(healthTarget * 0.5));
+
+  const monthScore = (year, monthIndex) => {
+    const txs = transactions.filter(t => {
+      const d = new Date(t.date);
+      return d.getMonth()===monthIndex && d.getFullYear()===year;
+    });
+    const y = txs.filter(t=>t.type==="income").reduce((s,t)=>s+t.amount,0);
+    if (!y) return 0;
+    const c = txs.filter(t=>t.type==="expense").reduce((s,t)=>s+t.amount,0);
+    const s = txs.filter(t=>t.type==="saving"&&t.categoryId!=="investment").reduce((sum,t)=>sum+t.amount,0);
+    const i = txs.filter(t=>t.categoryId==="investment").reduce((sum,t)=>sum+t.amount,0);
+    return Math.round(((s+i)/y)*100);
+  };
+  const last3 = [0,1,2].map((off) => {
+    const d = new Date(yr, selectedMonth - off, 1);
+    const sc = monthScore(d.getFullYear(), d.getMonth());
+    return { y:d.getFullYear(), m:d.getMonth(), score:sc };
+  });
+  const consistency3 = last3.filter(x => x.score >= healthTarget).length;
 
   // Chat send
   const sendChat = async () => {
@@ -581,16 +613,20 @@ Return ONLY this JSON (no markdown, no explanation):
                   <div style={{fontSize:11,color:"#555"}}>Financial Health Score</div>
                   <div style={{fontSize:10,color:"#333"}}>% income ditabung + investasi</div>
                 </div>
-                <div style={{fontSize:28,fontWeight:800,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:healthScore>=20?"#4ade80":healthScore>=10?"#fbbf24":"#f87171"}}>{healthScore}%</div>
+                <div style={{fontSize:28,fontWeight:800,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:healthScore>=healthTarget?"#4ade80":healthScore>=midTarget?"#fbbf24":"#f87171"}}>{healthScore}%</div>
               </div>
               <div style={{height:5,background:"#1c1c2e",borderRadius:3,overflow:"hidden"}}>
-                <div style={{height:"100%",width:`${Math.min(healthScore,100)}%`,background:healthScore>=20?"linear-gradient(90deg,#22d3ee,#4ade80)":healthScore>=10?"linear-gradient(90deg,#fbbf24,#f97316)":"#f87171",borderRadius:3,transition:"width 0.6s ease"}} />
+                <div style={{height:"100%",width:`${Math.min(healthScore,100)}%`,background:healthScore>=healthTarget?"linear-gradient(90deg,#22d3ee,#4ade80)":healthScore>=midTarget?"linear-gradient(90deg,#fbbf24,#f97316)":"#f87171",borderRadius:3,transition:"width 0.6s ease"}} />
               </div>
               <div style={{display:"flex",justifyContent:"space-between",marginTop:5,fontSize:10}}>
-                <span style={{color:"#333"}}>Target: 20%+</span>
-                <span style={{color:healthScore>=20?"#4ade80":healthScore>=10?"#fbbf24":"#f87171"}}>
-                  {healthScore>=20?"🔥 On Track!":healthScore>=10?"⚡ Lumayan":"⚠️ Perlu Ditingkatkan"}
+                <span style={{color:"#333"}}>Target: {healthTarget}%+</span>
+                <span style={{color:healthScore>=healthTarget?"#4ade80":healthScore>=midTarget?"#fbbf24":"#f87171"}}>
+                  {healthScore>=healthTarget?"🔥 On Track!":healthScore>=midTarget?"⚡ Lumayan":"⚠️ Perlu Ditingkatkan"}
                 </span>
+              </div>
+              <div style={{marginTop:8,fontSize:10,color:"#333",display:"flex",justifyContent:"space-between",gap:10}}>
+                <span>Konsistensi 3 bulan: <span style={{color:consistency3>=2?"#4ade80":consistency3===1?"#fbbf24":"#f87171",fontWeight:700}}>{consistency3}/3</span></span>
+                <span style={{color:"#2a2a3e"}}>{last3.map(x=>MONTHS[x.m]).reverse().join(" · ")}</span>
               </div>
             </div>
 
@@ -870,6 +906,23 @@ Return ONLY this JSON (no markdown, no explanation):
               <div style={{fontSize:10,color:"#333",marginTop:10,lineHeight:1.6}}>
                 Kalau Gemini gagal: cek API key benar, quota free tier, dan pastikan key tidak dibatasi (HTTP referrer restrictions).
               </div>
+            </div>
+
+            <div style={S.card}>
+              <div style={{fontSize:13,fontWeight:600,marginBottom:10}}>🎯 Target Health Score</div>
+              <div style={{fontSize:12,color:"#555",marginBottom:10}}>Target % pemasukan yang masuk tabungan + investasi.</div>
+              <div style={{display:"flex",gap:8,marginBottom:10}}>
+                {[10,15,20,30].map(v => (
+                  <button key={v} onClick={()=>saveHealthTarget(v)} style={{
+                    flex:1,padding:"9px 4px",borderRadius:10,fontSize:12,fontWeight:600,
+                    background:healthTarget===v?"linear-gradient(135deg,#6366f1,#8b5cf6)":"#14141f",
+                    color:healthTarget===v?"white":"#555",
+                    border:"1px solid "+(healthTarget===v?"transparent":"#2a2a3e"),
+                  }}>{v}%</button>
+                ))}
+              </div>
+              <label style={S.lbl}>Custom (5–90)</label>
+              <input type="number" min="5" max="90" value={healthTarget} onChange={e=>saveHealthTarget(e.target.value)} style={{...S.input}} />
             </div>
 
             <div style={S.card}>

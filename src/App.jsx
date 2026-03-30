@@ -386,6 +386,78 @@ Return ONLY this JSON (no markdown, no explanation):
     exportCSV(monthTxs, `dompet-${yr}-${pad2(selectedMonth + 1)}.csv`);
   };
 
+  const backupFilename = () => {
+    const d = new Date();
+    const stamp = `${d.getFullYear()}${pad2(d.getMonth() + 1)}${pad2(d.getDate())}-${pad2(d.getHours())}${pad2(d.getMinutes())}`;
+    return `dompet-backup-${stamp}.json`;
+  };
+
+  const buildBackup = () => ({
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    app: "dompet",
+    data: {
+      transactions,
+      geminiModel,
+      healthTarget,
+    },
+  });
+
+  const backupJSON = async () => {
+    const json = JSON.stringify(buildBackup(), null, 2);
+    const filename = backupFilename();
+    const file = new File([json], filename, { type: "application/json" });
+
+    // Web Share API: lets user send file to Google Drive (or any target) on mobile
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({
+          title: "dompet. backup",
+          text: "Backup data dompet (JSON). Simpan ke Google Drive biar aman.",
+          files: [file],
+        });
+        return;
+      }
+    } catch (e) {
+      // fall back to download
+    }
+
+    downloadText(filename, json, "application/json;charset=utf-8");
+  };
+
+  const restoreFromBackupObject = (obj) => {
+    const txs = obj?.data?.transactions;
+    if (!Array.isArray(txs)) throw new Error("Format backup tidak valid (transactions tidak ditemukan).");
+
+    const cleaned = txs
+      .filter((t) => t && typeof t === "object")
+      .map((t) => ({
+        id: typeof t.id === "number" ? t.id : Date.now(),
+        date: typeof t.date === "string" ? t.date : todayStr(),
+        type: t.type === "income" || t.type === "expense" || t.type === "saving" ? t.type : "expense",
+        categoryId: typeof t.categoryId === "string" ? t.categoryId : "other_expense",
+        amount: typeof t.amount === "number" ? t.amount : parseInt(t.amount, 10) || 0,
+        note: typeof t.note === "string" ? t.note : "",
+      }))
+      .filter((t) => t.amount);
+
+    setTransactions(cleaned);
+
+    const model = obj?.data?.geminiModel;
+    if (typeof model === "string" && model) saveModel(model);
+
+    const target = obj?.data?.healthTarget;
+    if (target !== undefined) saveHealthTarget(target);
+  };
+
+  const importBackup = async (file) => {
+    if (!file) return;
+    const text = await file.text();
+    const obj = JSON.parse(text);
+    if (!window.confirm("Restore backup akan menimpa data transaksi yang ada. Lanjut?")) return;
+    restoreFromBackupObject(obj);
+  };
+
   const escapeHtml = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({
     "&": "&amp;",
     "<": "&lt;",
@@ -961,6 +1033,20 @@ Return ONLY this JSON (no markdown, no explanation):
               <button onClick={exportCSVMonth} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Bulan Dipilih)</button>
               <button onClick={exportCSVAll} style={{width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer"}}>📥 Export CSV (Semua)</button>
               <button onClick={printMonthlyReport} style={{width:"100%",padding:12,borderRadius:12,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",border:"none",color:"white",fontSize:13,fontWeight:700,marginBottom:8,cursor:"pointer"}}>🖨️ Cetak / Save PDF (Bulan Dipilih)</button>
+              <button onClick={backupJSON} style={{width:"100%",padding:12,borderRadius:12,background:"#0e0e1a",border:"1px solid #6366f122",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer"}}>☁️ Backup JSON (Drive/Download)</button>
+              <label style={{display:"block"}}>
+                <input
+                  type="file"
+                  accept="application/json"
+                  style={{display:"none"}}
+                  onChange={async (e)=>{
+                    try { await importBackup(e.target.files?.[0]); }
+                    catch(err) { alert("Restore gagal: " + (err?.message||err)); }
+                    finally { e.target.value=''; }
+                  }}
+                />
+                <span style={{display:"block",width:"100%",padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:13,marginBottom:8,cursor:"pointer",textAlign:"center"}}>📤 Restore JSON</span>
+              </label>
               <button onClick={()=>{if(window.confirm("Hapus semua data transaksi?")){setTransactions([]);localStorage.removeItem("dompet_transactions");}}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #2a1a1a",color:"#f87171",fontSize:13,cursor:"pointer"}}>🗑️ Reset Semua Data</button>
             </div>
 

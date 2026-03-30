@@ -1,12 +1,13 @@
-const CACHE = "dompet-pwa-v1";
+const CACHE = "dompet-pwa-v2";
+const FONT_CACHE = "dompet-fonts-v1";
 const CORE = [
   "/",
   "/index.html",
   "/manifest.webmanifest",
   "/icon.svg",
-  "/icon-192.png",
-  "/icon-512.png",
-  "/apple-touch-icon.png",
+  "/icon-192-v2.png",
+  "/icon-512-v2.png",
+  "/apple-touch-icon-v2.png",
 ];
 
 self.addEventListener("install", (event) => {
@@ -35,7 +36,31 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
+  const isSameOrigin = url.origin === self.location.origin;
+
+  // Runtime cache for Google Fonts (prevents "ugly fonts" when offline/slow)
+  if (url.origin === "https://fonts.googleapis.com" || url.origin === "https://fonts.gstatic.com") {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(FONT_CACHE);
+        const cached = await cache.match(req);
+        if (cached) {
+          fetch(req).then((fresh) => cache.put(req, fresh.clone())).catch(() => {});
+          return cached;
+        }
+        try {
+          const fresh = await fetch(req);
+          cache.put(req, fresh.clone());
+          return fresh;
+        } catch {
+          return cached || Response.error();
+        }
+      })()
+    );
+    return;
+  }
+
+  if (!isSameOrigin) return;
 
   // App-shell style navigation fallback
   if (req.mode === "navigate") {

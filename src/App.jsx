@@ -465,6 +465,8 @@ Return ONLY this JSON (no markdown, no explanation):
   };
 
   const CSS = `
+    html,body{-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}
+    *{font-synthesis:none;}
     *{box-sizing:border-box;margin:0;padding:0;}
     button{cursor:pointer;border:none;}
     input,select{outline:none;}
@@ -478,7 +480,7 @@ Return ONLY this JSON (no markdown, no explanation):
 
   // SPLASH
   if (screen==="splash") return (
-    <div style={{minHeight:"100vh",background:"#08080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'Syne',sans-serif"}}>
+    <div style={{minHeight:"100vh",background:"#08080f",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",fontFamily:"'DM Sans','Segoe UI',sans-serif"}}>
       <style>{CSS}</style>
       <div style={{fontSize:44,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa,#22d3ee)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>dompet.</div>
       <div style={{color:"#333",fontSize:13,marginTop:8,fontFamily:"'DM Sans',sans-serif"}}>personal finance tracker</div>
@@ -490,7 +492,7 @@ Return ONLY this JSON (no markdown, no explanation):
     <div style={{minHeight:"100vh",background:"#08080f",color:"#e8e8f0",fontFamily:"'DM Sans','Segoe UI',sans-serif",maxWidth:480,margin:"0 auto",padding:24}}>
       <style>{CSS}</style>
       <div style={{marginTop:50}}>
-        <div style={{fontFamily:"'Syne',sans-serif",fontSize:34,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6}}>dompet.</div>
+        <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",fontSize:34,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent",marginBottom:6}}>dompet.</div>
         <div style={{fontSize:19,fontWeight:700,marginBottom:6}}>Setup AI Parsing 🤖</div>
         <div style={{fontSize:13,color:"#666",lineHeight:1.7,marginBottom:24}}>
           Pakai <strong style={{color:"#4ade80"}}>Gemini API</strong> dari Google —{" "}
@@ -531,7 +533,7 @@ Return ONLY this JSON (no markdown, no explanation):
       {/* Header */}
       <div style={{padding:"16px 16px 12px",position:"sticky",top:0,background:"#08080f",zIndex:10,borderBottom:"1px solid #141420"}}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-          <div style={{fontFamily:"'Syne',sans-serif",fontSize:22,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>dompet.</div>
+          <div style={{fontFamily:"'DM Sans','Segoe UI',sans-serif",fontSize:22,fontWeight:800,background:"linear-gradient(135deg,#6366f1,#a78bfa)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>dompet.</div>
           <div style={{textAlign:"right"}}>
             <div style={{fontSize:10,color:"#444"}}>saldo {MONTHS[selectedMonth]}</div>
             <div style={{fontSize:17,fontWeight:700,color:balance>=0?"#4ade80":"#f87171"}}>{formatShort(balance)}</div>
@@ -579,7 +581,7 @@ Return ONLY this JSON (no markdown, no explanation):
                   <div style={{fontSize:11,color:"#555"}}>Financial Health Score</div>
                   <div style={{fontSize:10,color:"#333"}}>% income ditabung + investasi</div>
                 </div>
-                <div style={{fontSize:28,fontWeight:800,fontFamily:"'Syne',sans-serif",color:healthScore>=20?"#4ade80":healthScore>=10?"#fbbf24":"#f87171"}}>{healthScore}%</div>
+                <div style={{fontSize:28,fontWeight:800,fontFamily:"'DM Sans','Segoe UI',sans-serif",color:healthScore>=20?"#4ade80":healthScore>=10?"#fbbf24":"#f87171"}}>{healthScore}%</div>
               </div>
               <div style={{height:5,background:"#1c1c2e",borderRadius:3,overflow:"hidden"}}>
                 <div style={{height:"100%",width:`${Math.min(healthScore,100)}%`,background:healthScore>=20?"linear-gradient(90deg,#22d3ee,#4ade80)":healthScore>=10?"linear-gradient(90deg,#fbbf24,#f97316)":"#f87171",borderRadius:3,transition:"width 0.6s ease"}} />

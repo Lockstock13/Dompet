@@ -112,6 +112,7 @@ export default function App() {
   const [screen, setScreen] = useState("splash");
   const [geminiKey, setGeminiKey] = useState("");
   const [keyInput, setKeyInput] = useState("");
+  const [geminiModel, setGeminiModel] = useState("gemini-2.5-flash");
   const [transactions, setTransactions] = useState([]);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
@@ -126,8 +127,10 @@ export default function App() {
 
   useEffect(() => {
     const key = localStorage.getItem("dompet_gemini_key");
+    const model = localStorage.getItem("dompet_gemini_model");
     const txs = localStorage.getItem("dompet_transactions");
     if (key) setGeminiKey(key);
+    if (model) setGeminiModel(model);
     if (txs) { try { setTransactions(JSON.parse(txs)); } catch(e){} }
     setTimeout(() => setScreen(key ? "app" : "onboarding"), 1200);
   }, []);
@@ -144,6 +147,11 @@ export default function App() {
     localStorage.setItem("dompet_gemini_key", k);
     setGeminiKey(k);
     setScreen("app");
+  };
+
+  const saveModel = (m) => {
+    localStorage.setItem("dompet_gemini_model", m);
+    setGeminiModel(m);
   };
 
   // Stats
@@ -195,14 +203,20 @@ Return ONLY this JSON (no markdown, no explanation):
 {"type":"income|expense|saving","categoryId":"<id>","amount":<number>,"note":"<short description>","date":"${todayStr()}"}`;
 
         console.log("🔵 Gemini: sending request...");
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`, {
+        const model = geminiModel || "gemini-2.5-flash";
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiKey}`;
+        const res = await fetch(endpoint, {
           method:"POST",
           headers:{"Content-Type":"application/json"},
           body:JSON.stringify({contents:[{parts:[{text:prompt}]}]})
         });
         console.log("🔵 Gemini: status", res.status);
-        const data = await res.json();
+        const data = await res.json().catch(() => null);
         console.log("🔵 Gemini: response", JSON.stringify(data).slice(0, 300));
+        if (!res.ok) {
+          const msg = data?.error?.message || `HTTP ${res.status}`;
+          throw new Error(msg);
+        }
         const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || "";
         console.log("🔵 Gemini: raw text", raw);
         const jsonMatch = raw.match(/\{[\s\S]*\}/);
@@ -210,8 +224,16 @@ Return ONLY this JSON (no markdown, no explanation):
         parsed = JSON.parse(jsonMatch[0]);
         console.log("✅ Gemini: parsed", parsed);
       } catch(e) { 
-        console.error("❌ Gemini failed:", e.message);
-        setChatMsgs(p => [...p, { role:"assistant", text:`⚠️ Gemini error: ${e.message}\nFallback ke local parser...`, isDebug:true }]);
+        const em = String(e?.message || "Unknown error");
+        console.error("❌ Gemini failed:", em);
+        const hint =
+          em.toLowerCase().includes("api key not valid") ? "API key invalid. Pastikan key dari Google AI Studio, nggak ada typo/spasi, dan masih aktif."
+          : em.toLowerCase().includes("permission") || em.toLowerCase().includes("denied") || em.includes("403") ? "403/Permission denied: biasanya key dibatasi (HTTP referrer restrictions) atau ada issue project/quota."
+          : em.toLowerCase().includes("quota") || em.toLowerCase().includes("rate") ? "Kena limit/quota. Coba tunggu atau cek quota di Google AI Studio."
+          : em.toLowerCase().includes("not found") || em.includes("404") ? `Model "${geminiModel}" nggak tersedia. Coba ganti model di Settings.`
+          : "Cek koneksi internet + pastikan key benar. Kalau tetap gagal, parsing lokal tetap jalan.";
+
+        setChatMsgs(p => [...p, { role:"assistant", text:`⚠️ Gemini error: ${em}\n${hint}\nFallback ke local parser...`, isDebug:true }]);
         parsed = null; 
       }
     } else {
@@ -443,7 +465,6 @@ Return ONLY this JSON (no markdown, no explanation):
   };
 
   const CSS = `
-    @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
     *{box-sizing:border-box;margin:0;padding:0;}
     button{cursor:pointer;border:none;}
     input,select{outline:none;}
@@ -473,7 +494,7 @@ Return ONLY this JSON (no markdown, no explanation):
         <div style={{fontSize:19,fontWeight:700,marginBottom:6}}>Setup AI Parsing 🤖</div>
         <div style={{fontSize:13,color:"#666",lineHeight:1.7,marginBottom:24}}>
           Pakai <strong style={{color:"#4ade80"}}>Gemini API</strong> dari Google —{" "}
-          <strong style={{color:"#4ade80"}}>GRATIS</strong> sampai 1500 request/hari.
+          ada <strong style={{color:"#4ade80"}}>free tier</strong> (limit mengikuti akun/quota Google).
         </div>
 
         <div style={{...S.card,marginBottom:16}}>
@@ -486,13 +507,18 @@ Return ONLY this JSON (no markdown, no explanation):
           ))}
         </div>
 
+        <label style={S.lbl}>Gemini Model</label>
+        <select value={geminiModel} onChange={e=>saveModel(e.target.value)} style={{...S.input,marginBottom:12}}>
+          {["gemini-2.5-flash","gemini-2.0-flash"].map(m => <option key={m} value={m}>{m}</option>)}
+        </select>
+
         <label style={S.lbl}>Gemini API Key</label>
         <input value={keyInput} onChange={e=>setKeyInput(e.target.value)} placeholder="AIza..." style={{...S.input,fontFamily:"monospace",fontSize:12,marginBottom:12}} />
         <button onClick={saveKey} style={{...S.btn,marginBottom:10}}>Simpan & Mulai →</button>
         <button onClick={()=>setScreen("app")} style={{width:"100%",padding:13,borderRadius:12,background:"transparent",border:"1px solid #1c1c2e",color:"#555",fontSize:13,cursor:"pointer"}}>
           Lewati, pakai parsing lokal
         </button>
-        <div style={{fontSize:11,color:"#2a2a3e",textAlign:"center",marginTop:12}}>API key hanya tersimpan di browser lo.</div>
+        <div style={{fontSize:11,color:"#2a2a3e",textAlign:"center",marginTop:12}}>API key/model hanya tersimpan di browser lo.</div>
       </div>
     </div>
   );
@@ -832,9 +858,16 @@ Return ONLY this JSON (no markdown, no explanation):
               <div style={{fontSize:12,color:geminiKey?"#4ade80":"#f97316",marginBottom:10}}>
                 {geminiKey?"✅ AI parsing aktif (Gemini)":"⚠️ Belum ada key — pakai parsing lokal"}
               </div>
+              <div style={{fontSize:11,color:"#555",marginBottom:6}}>Model</div>
+              <select value={geminiModel} onChange={e=>saveModel(e.target.value)} style={{...S.input,marginBottom:10}}>
+                {["gemini-2.5-flash","gemini-2.0-flash"].map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
               <input value={keyInput} onChange={e=>setKeyInput(e.target.value)} placeholder="AIza..." style={{...S.input,fontFamily:"monospace",fontSize:12,marginBottom:10}}/>
               <button onClick={saveKey} style={{...S.btn,marginBottom:8}}>Simpan API Key</button>
               {geminiKey&&<button onClick={()=>{localStorage.removeItem("dompet_gemini_key");setGeminiKey("");}} style={{width:"100%",padding:12,borderRadius:12,background:"transparent",border:"1px solid #2a1a1a",color:"#f87171",fontSize:13,cursor:"pointer"}}>Hapus API Key</button>}
+              <div style={{fontSize:10,color:"#333",marginTop:10,lineHeight:1.6}}>
+                Kalau Gemini gagal: cek API key benar, quota free tier, dan pastikan key tidak dibatasi (HTTP referrer restrictions).
+              </div>
             </div>
 
             <div style={S.card}>
@@ -850,7 +883,7 @@ Return ONLY this JSON (no markdown, no explanation):
               <div style={{fontWeight:600,color:"#444",marginBottom:4}}>dompet. v2</div>
               Framework: Y = C + I + S<br/>
               Data: localStorage (per browser)<br/>
-              AI: Gemini 2.0 Flash (gratis 1500/hari)
+              AI: {geminiKey ? `Gemini (${geminiModel})` : "Parsing lokal"}
             </div>
           </div>
         )}

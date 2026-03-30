@@ -25,5 +25,5 @@ npm run dev
 3. Deploy otomatis!
 
 ## AI Parsing
-Pakai Gemini API (gratis 1500 req/hari)
+Pakai Gemini API (ada free tier; limit mengikuti quota Google AI Studio).
 Dapat API key di: https://aistudio.google.com

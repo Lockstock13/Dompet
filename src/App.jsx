@@ -78,6 +78,33 @@ const Wordmark = ({ size = 24, gradientId = "dompetWordmarkGrad" }) => (
   </svg>
 );
 
+const AccordionSection = ({ title, subtitle, open, onToggle, right, children }) => (
+  <div style={{background:"#111118",border:"1px solid #1c1c2e",borderRadius:16,marginBottom:10,overflow:"hidden"}}>
+    <button
+      onClick={onToggle}
+      style={{
+        width:"100%",
+        display:"flex",
+        alignItems:"center",
+        justifyContent:"space-between",
+        gap:10,
+        padding:"12px 14px",
+        background:"transparent",
+      }}
+    >
+      <div style={{textAlign:"left"}}>
+        <div style={{fontSize:12,fontWeight:700,color:"#e8e8f0"}}>{title}</div>
+        {subtitle && <div style={{fontSize:11,color:"#9ca3af",marginTop:2}}>{subtitle}</div>}
+      </div>
+      <div style={{display:"flex",alignItems:"center",gap:10}}>
+        {right}
+        <div style={{fontSize:14,color:"#9ca3af",transform:open?"rotate(180deg)":"rotate(0deg)",transition:"transform 0.2s"}}>⌄</div>
+      </div>
+    </button>
+    {open && <div style={{padding:"0 14px 14px"}}>{children}</div>}
+  </div>
+);
+
 const useRecharts = (enabled) => {
   const [mod, setMod] = useState(null);
 
@@ -148,6 +175,9 @@ export default function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
+  const [cBudget, setCBudget] = useState(0);
+  const [cBudgetInput, setCBudgetInput] = useState("");
+  const [dashOpen, setDashOpen] = useState("allocation");
   const [chatMsgs, setChatMsgs] = useState([{ role:"assistant", text:"Hei! Catat transaksi lo dengan natural.\n\nContoh:\n• \"makan siang 45rb\"\n• \"gajian 8jt\"\n• \"side job foto 1.8jt\"\n• \"cicilan HP 1.2jt\" 💸" }]);
   const [chatInput, setChatInput] = useState("");
   const [parsing, setParsing] = useState(false);
@@ -197,6 +227,28 @@ export default function App() {
     setHealthTarget(v);
   };
 
+  const budgetKey = (year, monthIndex) => `dompet_budget_c_${year}-${pad2(monthIndex + 1)}`;
+  useEffect(() => {
+    const raw = localStorage.getItem(budgetKey(selectedYear, selectedMonth));
+    const n = parseInt(raw || "0", 10);
+    const val = Number.isFinite(n) ? Math.max(n, 0) : 0;
+    setCBudget(val);
+    setCBudgetInput(val ? String(val) : "");
+  }, [selectedYear, selectedMonth]);
+
+  const saveCBudget = () => {
+    const n = parseInt((cBudgetInput || "").trim(), 10);
+    const val = Number.isFinite(n) ? Math.max(n, 0) : 0;
+    localStorage.setItem(budgetKey(selectedYear, selectedMonth), String(val));
+    setCBudget(val);
+    if (!val) setCBudgetInput("");
+  };
+  const clearCBudget = () => {
+    localStorage.removeItem(budgetKey(selectedYear, selectedMonth));
+    setCBudget(0);
+    setCBudgetInput("");
+  };
+
   // Stats
   const yr = selectedYear;
   const monthTxs = transactions.filter(t => { const d = new Date(t.date); return d.getMonth()===selectedMonth && d.getFullYear()===yr; });
@@ -207,6 +259,9 @@ export default function App() {
   const balance = totalY - totalC - totalS - totalI;
   const healthScore = totalY > 0 ? Math.round(((totalS+totalI)/totalY)*100) : 0;
   const midTarget = Math.max(10, Math.round(healthTarget * 0.5));
+  const cBudgetPct = cBudget > 0 ? Math.min((totalC / cBudget) * 100, 100) : 0;
+  const cBudgetLeft = cBudget > 0 ? Math.max(cBudget - totalC, 0) : 0;
+  const cBudgetOver = cBudget > 0 ? Math.max(totalC - cBudget, 0) : 0;
 
   const monthScore = (year, monthIndex) => {
     const txs = transactions.filter(t => {
@@ -589,7 +644,7 @@ Return ONLY this JSON (no markdown, no explanation):
     ...cat, total:monthTxs.filter(t=>t.categoryId===cat.id).reduce((s,t)=>s+t.amount,0)
   })).filter(c=>c.total>0).sort((a,b)=>b.total-a.total);
 
-  const shouldLoadCharts = activeTab === "dashboard" && (pieData.length > 0 || transactions.length > 0);
+  const shouldLoadCharts = activeTab === "dashboard" && (dashOpen==="allocation" || dashOpen==="cashflow") && (pieData.length > 0 || transactions.length > 0);
   const recharts = useRecharts(shouldLoadCharts);
 
   const S = {
@@ -743,6 +798,47 @@ Return ONLY this JSON (no markdown, no explanation):
               </div>
             </div>
 
+            {/* Budget C */}
+            <div style={S.card}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                <div>
+                  <div style={{fontSize:11,color:"#9ca3af"}}>Budget Konsumsi (C)</div>
+                  <div style={{fontSize:10,color:"#a1a1aa",marginTop:2}}>{MONTHS[selectedMonth]} {yr}</div>
+                </div>
+                {cBudget>0 && (
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:10,color:"#9ca3af"}}>Sisa</div>
+                    <div style={{fontSize:13,fontWeight:800,color:cBudgetOver>0?"#f87171":"#4ade80"}}>
+                      {cBudgetOver>0?`-${formatShort(cBudgetOver)}`:formatShort(cBudgetLeft)}
+                    </div>
+                  </div>
+                )}
+              </div>
+              {cBudget>0 && (
+                <div style={{height:6,background:"#1c1c2e",borderRadius:4,overflow:"hidden",marginBottom:10}}>
+                  <div style={{height:"100%",width:`${Math.min(cBudgetPct,100)}%`,background:cBudgetOver>0?"#f87171":"linear-gradient(90deg,#f97316,#fb923c)",borderRadius:4,transition:"width 0.4s ease"}} />
+                </div>
+              )}
+              <div style={{display:"flex",gap:8}}>
+                <input
+                  type="number"
+                  value={cBudgetInput}
+                  onChange={e=>setCBudgetInput(e.target.value)}
+                  placeholder="Set budget C (Rp)"
+                  style={{...S.input,flex:1,padding:"10px 12px"}}
+                />
+                <button onClick={saveCBudget} style={{padding:"10px 12px",borderRadius:12,background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"white",fontWeight:800,fontSize:12}}>
+                  Simpan
+                </button>
+              </div>
+              {cBudget>0 && (
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:8,fontSize:10,color:"#a1a1aa"}}>
+                  <span>Terpakai: <span style={{fontWeight:700,color:"#f97316"}}>{formatShort(totalC)}</span> / {formatShort(cBudget)}</span>
+                  <button onClick={clearCBudget} style={{background:"transparent",color:"#9ca3af",textDecoration:"underline"}}>Reset</button>
+                </div>
+              )}
+            </div>
+
             {/* Insight */}
             {totalY>0 && (
               <div style={{...S.card,background:"#0e0e1a",borderColor:"#6366f122"}}>
@@ -765,11 +861,15 @@ Return ONLY this JSON (no markdown, no explanation):
               </div>
             )}
 
-            {/* Pie */}
+            {/* Details accordion */}
             {pieData.length>0 && (
-              <div style={S.card}>
-                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Alokasi {MONTHS[selectedMonth]}</div>
-                <div style={{display:"flex",alignItems:"center",gap:12}}>
+              <AccordionSection
+                title="Alokasi"
+                subtitle={`Ringkasan pengeluaran & alokasi · ${MONTHS[selectedMonth]} ${yr}`}
+                open={dashOpen==="allocation"}
+                onToggle={()=>setDashOpen(p=>p==="allocation"?"":"allocation")}
+              >
+                <div style={{display:"flex",alignItems:"center",gap:12,marginTop:6}}>
                   {recharts ? (() => {
                     const { PieChart, Pie, Cell, ResponsiveContainer } = recharts;
                     return (
@@ -796,19 +896,22 @@ Return ONLY this JSON (no markdown, no explanation):
                     ))}
                   </div>
                 </div>
-              </div>
+              </AccordionSection>
             )}
 
-            {/* Bar chart */}
             {transactions.length>0 && (
-              <div style={S.card}>
-                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Cashflow {yr}</div>
+              <AccordionSection
+                title="Cashflow"
+                subtitle={`Income vs Expense · ${yr}`}
+                open={dashOpen==="cashflow"}
+                onToggle={()=>setDashOpen(p=>p==="cashflow"?"":"cashflow")}
+              >
                 {recharts ? (() => {
                   const { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } = recharts;
                   return (
-                    <ResponsiveContainer width="100%" height={120}>
-                      <BarChart data={barData} barSize={6}>
-                        <XAxis dataKey="name" tick={{fontSize:9,fill:"#444"}} axisLine={false} tickLine={false}/>
+                    <ResponsiveContainer width="100%" height={140}>
+                      <BarChart data={barData} barSize={7}>
+                        <XAxis dataKey="name" tick={{fontSize:9,fill:"#a1a1aa"}} axisLine={false} tickLine={false}/>
                         <YAxis hide/>
                         <Tooltip contentStyle={{background:"#14141f",border:"1px solid #2a2a3e",borderRadius:8,fontSize:11}} formatter={v=>formatShort(v)}/>
                         <Bar dataKey="Y" fill="#4ade80" radius={[3,3,0,0]}/>
@@ -817,9 +920,9 @@ Return ONLY this JSON (no markdown, no explanation):
                     </ResponsiveContainer>
                   );
                 })() : (
-                  <div style={{height:120,borderRadius:12,background:"#0e0e16",border:"1px solid #1c1c2e"}} />
+                  <div style={{height:140,borderRadius:12,background:"#0e0e16",border:"1px solid #1c1c2e"}} />
                 )}
-                <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:4}}>
+                <div style={{display:"flex",gap:12,justifyContent:"center",marginTop:6}}>
                   {[["#4ade80","Income"],["#f97316","Expense"]].map(([c,l])=>(
                     <div key={l} style={{display:"flex",alignItems:"center",gap:4}}>
                       <div style={{width:7,height:7,borderRadius:2,background:c}}/>
@@ -827,31 +930,38 @@ Return ONLY this JSON (no markdown, no explanation):
                     </div>
                   ))}
                 </div>
-              </div>
+              </AccordionSection>
             )}
 
-            {/* Top expense */}
             {catBreakdown.length>0 && (
-              <div style={S.card}>
-                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>Top Pengeluaran</div>
-                {catBreakdown.slice(0,5).map((cat,i)=>(
-                  <div key={i} style={{marginBottom:10}}>
+              <AccordionSection
+                title="Top Pengeluaran"
+                subtitle={`Kategori terbesar · ${MONTHS[selectedMonth]} ${yr}`}
+                open={dashOpen==="top"}
+                onToggle={()=>setDashOpen(p=>p==="top"?"":"top")}
+              >
+                {catBreakdown.slice(0,8).map((cat,i)=>(
+                  <div key={i} style={{marginTop:i===0?6:0,marginBottom:10}}>
                     <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
                       <span style={{fontSize:12}}>{cat.emoji} {cat.label}</span>
                       <span style={{fontSize:12,fontWeight:600,color:"#f97316"}}>{formatShort(cat.total)}</span>
                     </div>
                     <div style={{height:3,background:"#1c1c2e",borderRadius:2}}>
-                      <div style={{height:"100%",width:`${Math.min((cat.total/totalC)*100,100)}%`,background:"linear-gradient(90deg,#f97316,#fb923c)",borderRadius:2}}/>
+                      <div style={{height:"100%",width:`${Math.min((cat.total/Math.max(totalC,1))*100,100)}%`,background:"linear-gradient(90deg,#f97316,#fb923c)",borderRadius:2}}/>
                     </div>
                   </div>
                 ))}
-              </div>
+              </AccordionSection>
             )}
 
             {transactions.length>0 && (
-              <div style={S.card}>
-                <div style={{fontSize:11,color:"#9ca3af",marginBottom:10}}>📤 Export & Laporan</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
+              <AccordionSection
+                title="Export & Laporan"
+                subtitle="CSV backup + laporan PDF"
+                open={dashOpen==="export"}
+                onToggle={()=>setDashOpen(p=>p==="export"?"":"export")}
+              >
+                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginTop:6}}>
                   <button onClick={exportCSVMonth} style={{padding:12,borderRadius:12,background:"#111118",border:"1px solid #1c1c2e",color:"#cbd5e1",fontSize:12,cursor:"pointer"}}>
                     📥 CSV {MONTHS[selectedMonth]}
                   </button>
@@ -865,7 +975,7 @@ Return ONLY this JSON (no markdown, no explanation):
                 <div style={{fontSize:10,color:"#a1a1aa",marginTop:8,lineHeight:1.5}}>
                   PDF = pakai fitur Print browser (Save as PDF). CSV = buat backup/olah data.
                 </div>
-              </div>
+              </AccordionSection>
             )}
           </div>
         )}
